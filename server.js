@@ -1,138 +1,74 @@
-'use strict';
+var express = require('express');
+var exphbs = require('express-handlebars');
+var path = require('path');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 
-//3rd Party Modules
+var port = process.env.PORT || 3000;
+var config = require('./lib/configLoader');    
+var db = require('./lib/database');
 
-var express                 = require('express'),
-    exphbs                  = require('express-handlebars'),
-    hbsHelpers              = require('handlebars-helpers'),
-    compression             = require('compression'),
-    morgan                  = require('morgan'),
-    bodyParser              = require('body-parser'),
-    cookieParser            = require('cookie-parser'),
-    session                 = require('cookie-session'),
-    csurf                   = require('csurf'),
-    favicon                 = require('serve-favicon'),
-    //fs                      = require('fs'),
+var routes = require('./routes/index');
+var app = express();
 
-//Local Modules
-
-    customExpressHbsHelpers = require('./lib/hbsHelpers/expressHbsHelpers'),
-    db                      = require('./lib/database'),
-    redisClient             = require('./lib/redisClient'),
-    productTypeRepository   = require('./lib/productTypeRepository'),
-    routes                  = require('./routes/router.js'),
-    port                    = process.env.PORT || 8080,
-    app                     = express(),
-    config                  = require('./lib/configLoader');
-
-//*************************************************
-//        Handlebars template registration
-//*************************************************
-
+// view engine setup
 var hbs = exphbs.create({
     extname: '.hbs',
-    defaultLayout: 'master',
-    helpers: customExpressHbsHelpers
+    defaultLayout: 'masterLayout',
 });
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
-//Add custom handlebars template helper functionality
-hbsHelpers.register(hbs.handlebars, {});
+app.set('views', path.join(__dirname, 'views'));
 
-//*************************************************
-//           Middleware and other settings
-//*************************************************
-app.use(favicon(__dirname + '/public/img/favicon.ico'));
-app.use(express.static(__dirname + '/public'));
-//app.use(compression()); //Compression done via nginx
 
-//Logging
-//var  accessLogStream = fs.createWriteStream(__dirname + '/access.log', {flags: 'a'});
-//app.use(morgan('dev', {stream: accessLogStream}));
-app.use(morgan('dev'));
-
-app.use(cookieParser());
+app.use(favicon(__dirname + '/public/images/favicon.ico'));
+app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-    keys: ['some*key']
-}));
-app.use(csurf());
-
-//************************************
-// Custom middleware injection
-//************************************
-
-//Handle product types being passed with every response
-app.use(productTypeRepository.injectProductTypes);
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
 //Pass database config settings
 db.init(config.databaseConfig);
 
-//Pass redis config settings
-redisClient.connect();
+app.use('/', routes);
 
-//Handle each request and ensure proper locals are set that are needed by app
+// catch 404 and forward to error handler
 app.use(function(req, res, next) {
-    res.locals._csrf = req.csrfToken();
-    if (req.query.searchtext) {
-        res.locals.searchtext = req.query.searchtext;
-    }
-    res.locals.encodedUrl = encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl);
-
-    next();
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
-app.use(function(err, req, res, next) {
-    console.error(err.stack);
-    res.send(500, { message: err.message });
-});
+// error handlers
 
-process.on('uncaughtException', function(err) {
-    if (err) console.log(err, err.stack);
-});
-
-
-//*********************************************************
-//        Ensure DB gets closed when SIGINT called
-//*********************************************************
-
-if (process.platform === "win32") {
-    require("readline").createInterface({
-        input: process.stdin,
-        output: process.stdout
-    }).on("SIGINT", function () {
-        console.log('SIGINT: Closing MongoDB connection');
-        db.close();
-        redisClient.close();
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
     });
+  });
 }
 
-process.on('SIGINT', function() {
-    console.log('SIGINT: Closing MongoDB connection');
-    db.close();
-    redisClient.close();
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
+  res.status(err.status || 500);
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
 });
-
-//*********************************************************
-//    Convention based route loading 
-//*********************************************************
-routes.load(app, './controllers');
-
-//Handle any routes that are unhandled and return 404
-app.use(function(req, res, next) {    
-    var err = new Error('Not Found');    
-    err.status = 404;    
-    res.render('errors/404', err);
-});
-
 
 app.listen(port, function (err) {
-    console.log('[%s] Listening on http://localhost:%d', process.env.NODE_ENV, port);
+    console.log('[%s] Listening on http://localhost:%d', app.settings.env, port);
 });
-
-
-
 
 
 //*********************************************************
@@ -153,4 +89,4 @@ if (process.env.NODE_ENV === 'development') {
 
 
 
-
+module.exports = app;

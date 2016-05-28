@@ -6,12 +6,11 @@ var dataInitializer = require('./lib/dataSeeder'),
 db.init(config.databaseConfig);
 
 console.log('Initializing Data');
-dataInitializer.initializeProductData(function(err) {
-  if (!err) {
-    console.log('Seed data loaded!');
-  } else {
-    console.log(err);
+dataInitializer.initializeData(function(err) {
+  if (err) {
+      console.log(err);
+  }
+  else {
+      console.log('Data Initialized!')
   }
 });
-
-
