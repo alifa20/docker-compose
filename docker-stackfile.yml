@@ -11,7 +11,7 @@ mongo:
   ports:
     - '27017:27017'
 node1:
-  image: 'alifa20/node-codewithdan:latest'
+  image: 'alifa/docker-compose:latest'
   environment:
     - NODE_ENV=production
   links:
@@ -21,6 +21,6 @@ node1:
     - '8080'
   working_dir: /var/www/codewithdan
 redis:
-  image: 'alifa20/redis:latest'
+  image: 'alifa/redis:latest'
   ports:
     - '6379'
