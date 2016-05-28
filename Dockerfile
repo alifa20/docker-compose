@@ -20,7 +20,7 @@ FROM node:latest
 MAINTAINER Ali Fathieh
 
 ENV NODE_ENV=development 
-ENV PORT=3000
+ENV PORT=8080
 
 COPY      . /var/www
 WORKDIR   /var/www
