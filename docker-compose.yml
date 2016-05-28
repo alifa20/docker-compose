@@ -5,7 +5,7 @@ services:
   node:
     build: 
       context: .
-      dockerfile: node.dockerfile
+      dockerfile: Dockerfile
     ports:
      - "3000:3000"
     networks:

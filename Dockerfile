@@ -17,7 +17,7 @@
 
 FROM node:latest
 
-MAINTAINER Dan Wahlin
+MAINTAINER Ali Fathieh
 
 ENV NODE_ENV=development 
 ENV PORT=3000

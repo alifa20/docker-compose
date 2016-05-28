@@ -1,0 +1,26 @@
+mongo:
+  image: 'alifa20/mongo:latest'
+  environment:
+    - MONGODB_DBNAME=funWithDocker
+    - MONGODB_PASSWORD=password
+    - MONGODB_ROLE=readWrite
+    - MONGODB_ROOT_PASSWORD=password
+    - MONGODB_ROOT_ROLE=root
+    - MONGODB_ROOT_USERNAME=dbadmin
+    - MONGODB_USERNAME=webrole
+  ports:
+    - '27017:27017'
+node1:
+  image: 'alifa20/node-codewithdan:latest'
+  environment:
+    - NODE_ENV=production
+  links:
+    - mongo
+    - redis
+  ports:
+    - '8080'
+  working_dir: /var/www/codewithdan
+redis:
+  image: 'alifa20/redis:latest'
+  ports:
+    - '6379'
